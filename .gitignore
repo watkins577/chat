@@ -1,3 +1,6 @@
 /protected/data
 /assets/*
 /runtime/*
+wwwchat.sublime-project
+wwwchat.sublime-workspace
+protected/runtime/
