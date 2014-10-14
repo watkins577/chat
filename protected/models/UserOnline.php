@@ -1,25 +1,21 @@
 <?php
 
 /**
- * This is the model class for table "tbl_user".
+ * This is the model class for table "tbl_useronline".
  *
- * The followings are the available columns in table 'tbl_user':
- * @property integer $id
- * @property string $username
- * @property string $password
- *
- * The followings are the available model relations:
- * @property TblMessage[] $tblMessages
+ * The followings are the available columns in table 'tbl_useronline':
+ * @property integer $chat_id
+ * @property integer $user_id
+ * @property string $last_time
  */
-class User extends CActiveRecord
+class UserOnline extends CActiveRecord
 {
-	private $_identity;
 	/**
 	 * @return string the associated database table name
 	 */
 	public function tableName()
 	{
-		return 'tbl_user';
+		return 'tbl_useronline';
 	}
 
 	/**
@@ -30,12 +26,11 @@ class User extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('username, password', 'required'),
-			array('username', 'unique'),
-			array('username, password', 'length', 'max'=>128),
+			array('chat_id, user_id, last_time', 'required'),
+			array('chat_id, user_id, last_time', 'numerical', 'integerOnly'=>true),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
-			array('id, username', 'safe', 'on'=>'search'),
+			array('chat_id, user_id, last_time', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -47,7 +42,8 @@ class User extends CActiveRecord
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
 		return array(
-			'tblMessages' => array(self::HAS_MANY, 'TblMessage', 'user_id'),
+			'chat' => array(self::BELONGS_TO, 'Chat', 'chat_id'),
+			'user' => array(self::BELONGS_TO, 'User', 'user_id'),
 		);
 	}
 
@@ -57,9 +53,9 @@ class User extends CActiveRecord
 	public function attributeLabels()
 	{
 		return array(
-			'id' => 'ID',
-			'username' => 'Username',
-			'password' => 'Password',
+			'chat_id' => 'Chat',
+			'user_id' => 'User',
+			'last_time' => 'Last Time',
 		);
 	}
 
@@ -81,8 +77,9 @@ class User extends CActiveRecord
 
 		$criteria=new CDbCriteria;
 
-		$criteria->compare('id',$this->id);
-		$criteria->compare('username',$this->username,true);
+		$criteria->compare('chat_id',$this->chat_id);
+		$criteria->compare('user_id',$this->user_id);
+		$criteria->compare('last_time',$this->last_time);
 
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,
@@ -93,26 +90,10 @@ class User extends CActiveRecord
 	 * Returns the static model of the specified AR class.
 	 * Please note that you should have this exact method in all your CActiveRecord descendants!
 	 * @param string $className active record class name.
-	 * @return User the static model class
+	 * @return UserOnline the static model class
 	 */
 	public static function model($className=__CLASS__)
 	{
 		return parent::model($className);
-	}
-
-	public function login()
-	{
-		if($this->_identity===null)
-		{
-			$this->_identity=new UserIdentity($this->username,$this->password);
-			$this->_identity->authenticate();
-		}
-		if($this->_identity->errorCode===UserIdentity::ERROR_NONE)
-		{
-			Yii::app()->user->login($this->_identity,0);
-			return true;
-		}
-		else
-			return false;
 	}
 }
