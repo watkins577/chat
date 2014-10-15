@@ -6,6 +6,7 @@
  * The followings are the available columns in table 'tbl_message':
  * @property string $id
  * @property integer $chat_id
+ * @property integer $user_to
  * @property integer $user_id
  * @property string $message
  * @property integer $time_sent
@@ -33,11 +34,11 @@ class Message extends CActiveRecord
 		// will receive user inputs.
 		return array(
 			array('chat_id, user_id, message, time_sent', 'required'),
-			array('chat_id, user_id, time_sent', 'numerical', 'integerOnly'=>true),
+			array('chat_id, user_id, time_sent, user_to', 'numerical', 'integerOnly'=>true),
 			array('message', 'length', 'max'=>255),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
-			array('id, chat_id, user_id, message, time_sent', 'safe', 'on'=>'search'),
+			array('id, chat_id, user_id, message, time_sent, user_to', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -51,6 +52,7 @@ class Message extends CActiveRecord
 		return array(
 			'chat' => array(self::BELONGS_TO, 'Chat', 'chat_id'),
 			'user' => array(self::BELONGS_TO, 'User', 'user_id'),
+			'user_to' => array(self::BELONGS_TO, 'User', 'user_id'),
 		);
 	}
 
@@ -63,6 +65,7 @@ class Message extends CActiveRecord
 			'id' => 'ID',
 			'chat_id' => 'Chat',
 			'user_id' => 'User',
+			'user_to' => 'To',
 			'message' => 'Message',
 			'time_sent' => 'Time Sent',
 		);
@@ -91,6 +94,7 @@ class Message extends CActiveRecord
 		$criteria->compare('user_id',$this->user_id);
 		$criteria->compare('message',$this->message,true);
 		$criteria->compare('time_sent',$this->time_sent);
+		$criteria->compare('user_to',$this->user_to);
 
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,

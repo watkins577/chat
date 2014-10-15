@@ -48,6 +48,7 @@ class ChatController extends Controller
 
 			$commandRet = $this->runCommand($_POST['message'], $userModel, $_POST['id']);
 			$messageModel['message'] = isset($commandRet[0]) ? $commandRet[0] : null;
+			$messageModel['user_to'] = isset($commandRet[1]) ? $commandRet[1] : null;
 		} else {
 			$messageModel['user_id'] = $userModel['id'];
 			$messageModel['message'] = htmlspecialchars($_POST['message']);
@@ -63,7 +64,7 @@ class ChatController extends Controller
 
 	public function actionAjaxGetMessages()
 	{
-		$dataProvider = $this->loadMessagesByChat($_POST['id']);
+		$dataProvider = $this->loadMessagesByChat($_POST['id'], $this->loadUserByName(Yii::app()->user->id)['id']);
 		$this->renderPartial('_chat', array('dataProvider'=>$dataProvider));
 	}
 
@@ -104,12 +105,15 @@ class ChatController extends Controller
     	return $model;
     }
 
-    public function loadMessagesByChat($id)
+    public function loadMessagesByChat($chat_id, $user_id)
     {
-    	$data = Message::model()->with('user')->findAllByAttributes(
-    		array('chat_id'=>$id), 
-    		array('order'=>'time_sent desc', 'limit'=>'10', 'offset'=>'0')
-    	);
+        $criteria = new CDbCriteria();
+        $criteria->condition = 'chat_id=:chat_id AND (user_to=:user_to OR user_to IS NULL)';
+        $criteria->limit = 10;
+        $criteria->offset = 0;
+        $criteria->params = array(':chat_id'=>$chat_id, ':user_to'=>$user_id);
+        $criteria->order = 'time_sent desc';
+        $data = Message::model()->with('user')->findAll($criteria);
     	return $data;
     }
 
@@ -133,7 +137,7 @@ class ChatController extends Controller
 
     public function runCommand($command, $user, $chat_id)
     {
-    	$command = substr($command, 1);
+    	$command = htmlspecialchars(substr($command, 1));
     	if ($command == '') {
     		return null;
     	}
@@ -153,7 +157,7 @@ class ChatController extends Controller
     				$charModel['chat_id'] = $chat_id;
     				$charModel['user_id'] = $user['id'];
 
-    				$charModel['name'] = htmlspecialchars($commandParams[1]);
+    				$charModel['name'] = $commandParams[1];
 
     				if ($charModel->validate()) {
     					$charModel->save();
@@ -162,6 +166,22 @@ class ChatController extends Controller
     			}
     		}
     	}
+        if ($commandParams[0] == 'msg') {
+            if (isset($commandParams[1]) && isset($commandParams[2])) {
+                $message = null;
+                $to_id = null;
+                $user_to = $this->loadUserByName($commandParams[1]);
+                if ($user_to == null) {
+                    $message = sprintf('%s is not a user.', $commandParams[1]);
+                    $to_id = $user['id'];
+                } else {
+                    $message = sprintf('From %s: %s', $user['username'], implode(' ', array_slice($commandParams, 2)));
+                    $to_id = $user_to['id'];
+                }
+                $ret[] = $message;
+                $ret[] = $to_id;
+            }
+        }
     	return $ret;
     }
 }
