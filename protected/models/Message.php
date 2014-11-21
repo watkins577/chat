@@ -35,7 +35,7 @@ class Message extends CActiveRecord
 		return array(
 			array('chat_id, user_id, message, time_sent', 'required'),
 			array('chat_id, user_id, time_sent, user_to', 'numerical', 'integerOnly'=>true),
-			array('message', 'length', 'max'=>255),
+			array('message', 'length', 'max'=>10000),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
 			array('id, chat_id, user_id, message, time_sent, user_to', 'safe', 'on'=>'search'),

@@ -44,4 +44,7 @@ $(document).keypress(function (e) {
 </script>
 <?php endif ?>
 </div>
+
+<div class="character">
+</div>
 <?php  ?>

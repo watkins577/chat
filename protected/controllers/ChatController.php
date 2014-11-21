@@ -3,7 +3,7 @@
 class ChatController extends Controller
 {
 
-	public $layout='//layouts/column1';
+	public $layout='//layouts/column2';
 	
 	public function actionIndex()
 	{
@@ -15,10 +15,14 @@ class ChatController extends Controller
 
 	public function actionCreate()
 	{
+        if (Yii::app()->user->isGuest) {
+            $this->redirect('index');
+        }
 		$model = new Chat();
 
 		if (isset($_POST['Chat'])) {
 			$model->attributes = $_POST['Chat'];
+            $model['dm_id'] = $this->loadUserByName(Yii::app()->user->id)['id'];
 
 			if ($model->save())
 				$this->redirect(array('view', 'id'=>$model->id));
@@ -29,6 +33,7 @@ class ChatController extends Controller
 
 	public function actionView($id)
 	{
+        $this->layout='//layouts/column1';
 		$model = $this->loadModel($id);
 		$this->render('view', array('model'=>$model));
 	}
@@ -38,15 +43,19 @@ class ChatController extends Controller
 		$messageModel = new Message();
 
 		$userModel = $this->loadUserByName(Yii::app()->user->id);
+        $chatModel = $this->loadModel($_POST['id']);
 
-		$messageModel['chat_id'] = $_POST['id'];
+		$messageModel['chat_id'] = $chatModel['id'];
 		$messageModel['time_sent'] = time();
 
-
-		if (strpos($_POST['message'], '/') === 0) {
+        if (strlen($_POST['message']) > 1000) {
+            $messageModel['user_id'] = 1;
+            $messageModel['message'] = "This message is too long, please try a shorter message";
+            $messageModel['user_to'] = $userModel['id'];
+        } else if (strpos($_POST['message'], '/') === 0) {
 			$messageModel['user_id'] = 1;
 
-			$commandRet = $this->runCommand($_POST['message'], $userModel, $_POST['id']);
+			$commandRet = $this->runCommand($_POST['message'], $userModel, $chatModel);
 			$messageModel['message'] = isset($commandRet[0]) ? $commandRet[0] : null;
 			$messageModel['user_to'] = isset($commandRet[1]) ? $commandRet[1] : null;
 		} else {
@@ -135,7 +144,7 @@ class ChatController extends Controller
     	return $data != null;
     }
 
-    public function runCommand($command, $user, $chat_id)
+    public function runCommand($command, $user, $chat)
     {
     	$command = htmlspecialchars(substr($command, 1));
     	if ($command == '') {
@@ -152,9 +161,9 @@ class ChatController extends Controller
     	}
     	if ($commandParams[0] == 'create') {
     		if (isset($commandParams[1])) {
-    			if (!$this->hasCharacter($user['id'], $chat_id)) {
+    			if (!$this->hasCharacter($user['id'], $chat['id'])) {
     				$charModel = new Character();
-    				$charModel['chat_id'] = $chat_id;
+    				$charModel['chat_id'] = $chat['id'];
     				$charModel['user_id'] = $user['id'];
 
     				$charModel['name'] = $commandParams[1];
@@ -180,6 +189,10 @@ class ChatController extends Controller
                 }
                 $ret[] = $message;
                 $ret[] = $to_id;
+            }
+        }
+        if ($commandParams[0] == 'dm') {
+            if (isset($commandParams[1])) {
             }
         }
     	return $ret;

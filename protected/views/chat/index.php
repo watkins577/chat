@@ -6,9 +6,10 @@ $this->breadcrumbs=array(
 	'Chats',
 );
 
-$this->menu=array(
-	array('label'=>'Create Chat', 'url'=>array('create')),
-);
+if (!Yii::app()->user->isGuest)
+	$this->menu=array(
+		array('label'=>'Create Chat', 'url'=>array('create')),
+	);
 ?>
 
 <h1>Chats</h1>
